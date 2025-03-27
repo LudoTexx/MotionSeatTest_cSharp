@@ -1,14 +1,6 @@
-﻿using System.Reflection.Metadata;
-using System.Text;
+﻿using MotionSeatTest_cSharp.Manage;
 using System.Windows;
 using System.Windows.Controls;
-using System.Windows.Data;
-using System.Windows.Documents;
-using System.Windows.Input;
-using System.Windows.Media;
-using System.Windows.Media.Imaging;
-using System.Windows.Navigation;
-using System.Windows.Shapes;
 
 namespace MotionSeatTest_cSharp;
 
@@ -50,6 +42,11 @@ public partial class MainWindow : Window
     }
 
 
+
+
+
+
+
     /// <summary>
     /// Function that return a list of UI element in a view.
     /// </summary>
@@ -79,32 +76,45 @@ public partial class MainWindow : Window
 
     private async void btn_start_Click(object sender, RoutedEventArgs e)
     {
-        GlobalVariables.cts = new CancellationTokenSource();
+        GlobalVariables.Cts = new CancellationTokenSource();
+        GlobalVariables.CtsDeditec = new CancellationTokenSource();
 
-        await MotionSeatTest_cSharp.SimRacingStudio.SimRacingStudioAPI.StartMotionSystem(GlobalVariables.cts.Token);
+        Task setupDeditecTask = Gpio.SetUpDeditec(GlobalVariables.CtsDeditec.Token);
+        Task startMotionSystemTask = SimRacingStudio.SimRacingStudioAPI.StartMotionSystem(GlobalVariables.Cts.Token);
+
+        await Task.WhenAll(setupDeditecTask, startMotionSystemTask);
     }
 
     private void btn_stop_Click(object sender, RoutedEventArgs e)
     {
-        if(GlobalVariables.cts != null && !GlobalVariables.cts.IsCancellationRequested)
+        CancelAndDispose(ref GlobalVariables.Cts);
+        CancelAndDispose(ref GlobalVariables.CtsDeditec);
+    }
+
+    private void CancelAndDispose(ref CancellationTokenSource cts)
+    {
+        if (cts != null)
         {
-            GlobalVariables.cts.Cancel();
-            GlobalVariables.cts.Dispose();
+            cts.Cancel();
+
+            cts.Dispose();
+            cts = null;
         }
     }
 
+
     private void sld_pitch_ValueChanged(object sender, RoutedPropertyChangedEventArgs<double> e)
     {
-        GlobalVariables.pitch = (float)e.NewValue;
+        //GlobalVariables.Pitch = (float)e.NewValue;
     }
 
     private void sld_roll_ValueChanged(object sender, RoutedPropertyChangedEventArgs<double> e)
     {
-        GlobalVariables.roll = (float)e.NewValue;
+        //GlobalVariables.Roll = (float)e.NewValue;
     }
 
     private void sld_yaw_ValueChanged(object sender, RoutedPropertyChangedEventArgs<double> e)
     {
-        GlobalVariables.yaw = (float)e.NewValue;
+        GlobalVariables.Yaw = (float)e.NewValue;
     }
 }
